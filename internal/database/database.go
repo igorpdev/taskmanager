@@ -11,8 +11,12 @@ import (
 
 var Client *mongo.Client
 
-func Connect(uri string) error {
-	clientOptions := options.Client().ApplyURI(uri)
+func Connect(uri string, minPoolSize, maxPoolSize uint64, timeout time.Duration) error {
+	clientOptions := options.Client().
+		ApplyURI(uri).
+		SetMinPoolSize(minPoolSize).
+		SetMaxPoolSize(maxPoolSize).
+		SetConnectTimeout(timeout)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -28,6 +32,15 @@ func Connect(uri string) error {
 
 	Client = client
 	return nil
+}
+
+func Disconnect() error {
+	if Client == nil {
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	return Client.Disconnect(ctx)
 }
 
 func GetCollection(collectionName string) *mongo.Collection {

@@ -4,3 +4,6 @@ server:
 database:
   uri: mongodb://mongo:27017
   name: taskmanager
+  minPoolSize: 1
+  maxPoolSize: 3
+  timeout: 10s
