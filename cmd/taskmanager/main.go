@@ -25,6 +25,11 @@ type Config struct {
 		MaxPoolSize uint64        `yaml:"maxPoolSize"`
 		Timeout     time.Duration `yaml:"timeout"`
 	} `yaml:"database"`
+	Metrics struct {
+		Enabled        bool   `yaml:"enabled"`
+		Endpoint       string `yaml:"endpoint"`
+		ScrapeInterval string `yaml:"scrapeInterval"`
+	} `yaml:"metrics"`
 }
 
 func loadConfig() (*Config, error) {
@@ -62,7 +67,13 @@ func main() {
 	controller.InitTaskCollection()
 
 	r := gin.Default()
-	router.SetupRoutes(r)
+
+	if cfg.Metrics.Enabled {
+		log.Printf("Metrics enabled at %s", cfg.Metrics.Endpoint)
+		router.SetupRoutes(r, cfg.Metrics.Endpoint)
+	} else {
+		router.SetupRoutes(r, "")
+	}
 
 	r.Run(fmt.Sprintf(":%d", cfg.Server.Port))
 }

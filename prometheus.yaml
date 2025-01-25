@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 5s
+
+log_level: debug
+scrape_configs:
+  - job_name: 'taskmanager'
+    static_configs:
+      - targets: ['taskmanager:8080']

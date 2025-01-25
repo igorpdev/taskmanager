@@ -44,3 +44,8 @@ Task Manager é uma aplicação para gerenciar tarefas, construída com Go, Gin 
 - `GET /tasks/:id` - Obtém uma tarefa pelo ID
 - `PUT /tasks/:id` - Atualiza uma tarefa pelo ID
 - `DELETE /tasks/:id` - Deleta uma tarefa pelo ID
+- `GET /metrics` - Retorna as métricas da aplicação (usado para monitoramento)
+
+## Observações
+
+Certifique-se de que o endpoint `/metrics` está habilitado no código e configurado corretamente no ambiente para expor as métricas da aplicação.
