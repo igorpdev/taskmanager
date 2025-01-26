@@ -12,3 +12,8 @@ metrics:
   enabled: true
   endpoint: /metrics
   scrapeInterval: 5s
+
+circuitBreaker:
+  maxRequests: 5
+  interval: 10s
+  timeout: 5s

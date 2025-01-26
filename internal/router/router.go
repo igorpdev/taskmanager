@@ -1,11 +1,13 @@
 package router
 
 import (
+	"taskmanager/internal/config"
 	"taskmanager/internal/controller"
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/sony/gobreaker"
 )
 
 var (
@@ -31,6 +33,21 @@ func init() {
 	prometheus.MustRegister(requestDuration)
 }
 
+func CircuitBreakerMiddleware(cb *gobreaker.CircuitBreaker) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		_, err := cb.Execute(func() (interface{}, error) {
+			c.Next()
+			return nil, nil
+		})
+
+		if err != nil {
+			c.JSON(503, gin.H{"error": "Service unavailable"})
+			c.Abort()
+			return
+		}
+	}
+}
+
 func MetricsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		timer := prometheus.NewTimer(
@@ -43,11 +60,20 @@ func MetricsMiddleware() gin.HandlerFunc {
 	}
 }
 
-func SetupRoutes(r *gin.Engine, metricsEndpoint string) {
-	r.Use(MetricsMiddleware())
+func SetupRoutes(r *gin.Engine) {
+	cbConfig := config.AppConfig.CircuitBreaker
+	cb := gobreaker.NewCircuitBreaker(gobreaker.Settings{
+		Name:        "TaskServiceCircuitBreaker",
+		MaxRequests: uint32(cbConfig.MaxRequests),
+		Interval:    cbConfig.Interval,
+		Timeout:     cbConfig.Timeout,
+	})
 
-	if metricsEndpoint != "" {
-		r.GET(metricsEndpoint, gin.WrapH(promhttp.Handler()))
+	r.Use(MetricsMiddleware())
+	r.Use(CircuitBreakerMiddleware(cb))
+
+	if config.AppConfig.Metrics.Enabled {
+		r.GET(config.AppConfig.Metrics.Endpoint, gin.WrapH(promhttp.Handler()))
 	}
 
 	r.GET("/tasks", controller.GetTasks)

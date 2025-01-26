@@ -37,8 +37,16 @@ func GetTasks(c *gin.Context) {
 
 	for cursor.Next(ctx) {
 		var task model.Task
-		cursor.Decode(&task)
+		if err := cursor.Decode(&task); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode task"})
+			return
+		}
 		tasks = append(tasks, task)
+	}
+
+	if err := cursor.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error iterating tasks"})
+		return
 	}
 
 	c.JSON(http.StatusOK, tasks)
@@ -57,7 +65,7 @@ func CreateTask(c *gin.Context) {
 
 	_, err := taskCollection.InsertOne(ctx, newTask)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create task"})
 		return
 	}
 
@@ -66,15 +74,15 @@ func CreateTask(c *gin.Context) {
 
 func GetTaskByID(c *gin.Context) {
 	id := c.Param("id")
-	var task model.Task
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
 		return
 	}
+
+	var task model.Task
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	err = taskCollection.FindOne(ctx, bson.M{"_id": objID}).Decode(&task)
 	if err != nil {
@@ -102,13 +110,14 @@ func UpdateTask(c *gin.Context) {
 		return
 	}
 
-	_, err = taskCollection.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": updatedTask})
+	update := bson.M{"$set": updatedTask}
+	_, err = taskCollection.UpdateOne(ctx, bson.M{"_id": objID}, update)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update task"})
 		return
 	}
 
-	c.JSON(http.StatusOK, updatedTask)
+	c.JSON(http.StatusOK, gin.H{"message": "Task updated successfully"})
 }
 
 func DeleteTask(c *gin.Context) {
@@ -124,9 +133,9 @@ func DeleteTask(c *gin.Context) {
 
 	_, err = taskCollection.DeleteOne(ctx, bson.M{"_id": objID})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete task"})
 		return
 	}
 
-	c.JSON(http.StatusNoContent, nil)
+	c.JSON(http.StatusNoContent, gin.H{"message": "Task deleted successfully"})
 }
