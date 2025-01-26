@@ -1,6 +1,8 @@
 services:
   taskmanager:
-    build: .
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
     ports:
       - "8080:8080"
     depends_on:
@@ -19,7 +21,7 @@ services:
   prometheus:
     image: prom/prometheus:latest
     volumes:
-      - ./prometheus.yaml:/etc/prometheus/prometheus.yaml
+      - ../configs/prometheus.yaml:/etc/prometheus/prometheus.yaml
     ports:
       - "9090:9090"
 volumes:

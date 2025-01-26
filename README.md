@@ -32,7 +32,7 @@ Task Manager é uma aplicação para gerenciar tarefas, construída com Go, Gin 
 1. Construa e inicie os contêineres Docker:
 
     ```sh
-    docker-compose up --build
+    docker-compose -f deploy/docker-compose.yaml up --build 
     ```
 
 2. Acesse a aplicação em [http://localhost:8080](http://localhost:8080).

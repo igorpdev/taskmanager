@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	config.LoadConfig("config.yaml")
+	config.LoadConfig("configs/config.yaml")
 
 	dbConfig := config.AppConfig.Database
 	err := database.Connect(dbConfig.URI, uint64(dbConfig.MinPoolSize), uint64(dbConfig.MaxPoolSize), dbConfig.Timeout)
